@@ -22,12 +22,36 @@ function UploadForm() {
     setPhoto(e.target.files[0]); //e.target.files contains all files, [0]gets the first uploaded file
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault(); //avoids the page from refreshing
 
-    console.log(formData);
-    console.log(photo);
-  }
+    //create formData object, append all fields & send to backend using fetch()
+    const data = new FormData()
+    data.append("fullName", formData.fullName)
+    data.append("age", formData.age)
+    data.append("gender", formData.gender)
+    data.append("description", formData.description)
+    data.append("lastSeenLocation", formData.lastSeenLocation)
+    //append image data too
+    data.append("file", photo)
+
+    try {
+      const response = await fetch("http://127.0.0.1:8000/upload", {
+        method:"POST",
+        body:data,
+      })
+      const result = await response.json()
+
+      console.log("Success: ", result)
+      alert("Uploaded successfully")
+
+    } catch (error) {
+      console.error("Error: ", error)
+      alert("Uploaded failed")
+
+    }
+
+  } 
 
 return (
   <div className="container mt-5">
