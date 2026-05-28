@@ -2,6 +2,13 @@ from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware #controls which websites(frontend) has access to backend
 import shutil #to save uploaded files
 import os #works with files/folders
+from sqlalchemy.orm import Session
+
+
+from database import engine, SessionLocal
+from models import Base, Prisoner 
+#automatically create table in postgresql
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI() #creates backend application
 app.add_middleware(
@@ -32,14 +39,27 @@ async def upload_prisoner(
   with open(file_path, "wb") as buffer: #opens file in binary-mode(isn't human-readable)
     shutil.copyfileobj(file.file, buffer) #copies uploaded file into folder
   
-  #backend responds
-  return {"message": "Uploaded successfully", 
-          "data": {
-            "fullName": fullName,
-            "age": age,
-            "gender": gender,
-            "description": description,
-            "lastSeenLocation": lastSeenLocation,
-            "imagePath": file_path
-          } #sends back form data & path of saved image
-        }
+  #connect to DB
+  db: Session = SessionLocal()
+
+  #create prisoner object
+  new_prisoner = Prisoner(
+    full_name = fullName,
+    age=age,
+    gender=gender,
+    description=description,
+    last_seen_location=lastSeenLocation,
+    image_path=file_path
+
+  )
+  #save to DB
+  db.add(new_prisoner)
+  db.commit() #permanently saves it to db
+  db.refresh(new_prisoner) #return fully updated obj 
+
+  db.close()
+
+  return {
+    "message": "Uploaded successfully",
+    "id": new_prisoner.id
+  }
