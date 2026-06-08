@@ -40,7 +40,7 @@ function UploadForm() {
         method:"POST",
         body:data,
       })
-      const result = await response.json()
+      const result = await response.json() 
 
       console.log("Success: ", result)
       alert("Uploaded successfully")
