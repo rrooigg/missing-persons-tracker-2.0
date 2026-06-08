@@ -1,7 +1,9 @@
-import { useState } from "react";
+import { use, useState } from "react";
 import { FaCheckCircle, FaTimesCircle } from "react-icons/fa";
 
 function UploadForm() {
+  const [loading, setLoading] = useState(false);
+
   const [result, setResult] = useState(null);
   
   const [formData, setFormData] = useState({
@@ -28,6 +30,8 @@ function UploadForm() {
   const handleSubmit = async (e) => {
     e.preventDefault(); //avoids the page from refreshing
 
+    setLoading(true);
+
     //create formData object, append all fields & send to backend using fetch()
     const data = new FormData()
     data.append("fullName", formData.fullName)
@@ -42,19 +46,18 @@ function UploadForm() {
       const response = await fetch("http://127.0.0.1:8000/upload", {
         method:"POST",
         body:data,
-      })
+      });
       const result = await response.json() 
-
-      console.log("Success: ", result)
       setResult(result);
 
     } catch (error) {
-      console.error("Error: ", error)
-      alert("Uploaded failed")
+      console.error("Error: ", error);
 
+    } finally {
+      setLoading(false);
     }
 
-  }
+  };
 
 return (
   <div className="container mt-5">
@@ -126,7 +129,7 @@ return (
           <input type="file" className="form-control" accept="image/*" onChange={handPhotoChange}/>
         </div>
 
-        <button type="submit" className="btn btn-primary w-100">Submit</button>
+        <button type="submit" className="btn btn-primary w-100" disabled={loading}>{loading ? "Searching...": "Submit"}</button>
 
       </form>
     </div>
