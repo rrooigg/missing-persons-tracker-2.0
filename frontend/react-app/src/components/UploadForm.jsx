@@ -51,7 +51,7 @@ function UploadForm() {
 
     }
 
-  } 
+  }
 
 return (
   <div className="container mt-5">

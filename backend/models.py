@@ -1,5 +1,6 @@
 from sqlalchemy import Column, Integer, String
 from database import Base
+from sqlalchemy.dialects.postgresql import JSON 
 
 
 #create db model 
@@ -12,3 +13,4 @@ class Prisoner(Base):
   description = Column(String, nullable=False)
   last_seen_location = Column(String, nullable=False)
   image_path = Column(String, nullable=False)
+  face_embedding= Column(JSON, nullable=True) #stores face embedding as JSON string 

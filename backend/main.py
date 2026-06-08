@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware #controls which websites(fron
 import shutil #to save uploaded files
 import os #works with files/folders
 from sqlalchemy.orm import Session
+from face_recognition import get_embedding, find_best_match
 
 
 from database import engine, SessionLocal
@@ -42,24 +43,53 @@ async def upload_prisoner(
   #connect to DB
   db: Session = SessionLocal()
 
-  #create prisoner object
-  new_prisoner = Prisoner(
-    full_name = fullName,
-    age=age,
-    gender=gender,
-    description=description,
-    last_seen_location=lastSeenLocation,
-    image_path=file_path
+  try:
+    #Extract face embedding
+    try:
+      uploaded_embedding=get_embedding(file_path)
+    
+    except Exception:
+      return {
+        "message": "No face detected in uploaded image"
+      }
+    
+    #Search for existing prisoner
+    prisoners=db.query(Prisoner).all()
 
-  )
-  #save to DB
-  db.add(new_prisoner)
-  db.commit() #permanently saves it to db
-  db.refresh(new_prisoner) #return fully updated obj 
+    best_match, similarity=find_best_match(
+      uploaded_embedding,
+      prisoners
+    )
+    #Threshold
+    if best_match and similarity > 0.80:
+      return {
+        "message":"Matching prisoner found",
+        "matched_id":best_match.id,
+        "matched_name":best_match.full_name,
+        "similarity":float(similarity)
+      }
 
-  db.close()
+    #create prisoner object
+    new_prisoner = Prisoner(
+      full_name = fullName,
+      age=age,
+      gender=gender,
+      description=description,
+      last_seen_location=lastSeenLocation,
+      image_path=file_path,
+      #save embedding when new prisoner is created
+      face_embedding=uploaded_embedding
 
-  return {
-    "message": "Uploaded successfully",
-    "id": new_prisoner.id
-  }
+    )
+    #save to DB
+    db.add(new_prisoner)
+    db.commit() #permanently saves it to db
+    db.refresh(new_prisoner) #return fully updated obj 
+
+    return {
+      "message": "Uploaded successfully",
+      "id": new_prisoner.id
+    }
+  
+  finally:
+    db.close()

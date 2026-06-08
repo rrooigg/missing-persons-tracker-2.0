@@ -2,8 +2,6 @@
 from sqlalchemy import create_engine   #core object to communicate with database
 from sqlalchemy.ext.declarative import declarative_base  #creates a base class which db models will inherit from
 from sqlalchemy.orm import sessionmaker   #session like a 'conversation' with the db i.e crud operations with db
-
-
 #database url
 DATABASE_URL = "postgresql://postgres:Abdigani04@localhost/prisoners"
 
