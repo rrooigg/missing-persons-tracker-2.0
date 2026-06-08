@@ -4,7 +4,7 @@ import shutil #to save uploaded files
 import os #works with files/folders
 from sqlalchemy.orm import Session
 from face_recognition import get_embedding, find_best_match
-
+from fastapi.staticfiles import StaticFiles 
 
 from database import engine, SessionLocal
 from models import Base, Prisoner 
@@ -63,33 +63,54 @@ async def upload_prisoner(
     #Threshold
     if best_match and similarity > 0.80:
       return {
-        "message":"Matching prisoner found",
+        "match_found":True,
         "matched_id":best_match.id,
         "matched_name":best_match.full_name,
         "similarity":float(similarity)
       }
 
-    #create prisoner object
-    new_prisoner = Prisoner(
-      full_name = fullName,
-      age=age,
-      gender=gender,
-      description=description,
-      last_seen_location=lastSeenLocation,
-      image_path=file_path,
-      #save embedding when new prisoner is created
-      face_embedding=uploaded_embedding
-
-    )
-    #save to DB
-    db.add(new_prisoner)
-    db.commit() #permanently saves it to db
-    db.refresh(new_prisoner) #return fully updated obj 
-
     return {
-      "message": "Uploaded successfully",
-      "id": new_prisoner.id
+      "match_found":False,
+      "message":"No matching prisoner found"
+
     }
+    # return {
+    #   "message": "Uploaded successfully",
+    #   "id": new_prisoner.id
+    # }
   
   finally:
     db.close()
+
+#add route to get prisoner details
+@app.get("/prisoner/{prisoner_id}")
+def get_prisoner(prisoner_id:int):
+  db=SessionLocal()
+
+  try:
+    prisoner = (
+      db.query(Prisoner)
+      .filter(Prisoner.id == prisoner_id)
+      .first()
+    )
+
+    if not prisoner:
+      return {"message":"Not found"}
+    
+    return {
+      "id":prisoner_id,
+      "full_name":prisoner.full_name,
+      "age":prisoner.age,
+      "gender":prisoner.gender,
+      "description":prisoner.description,
+      "last_seen_location":prisoner.last_seen_location,
+      "image_path":prisoner.image_path
+    }
+  finally:
+    db.close()
+
+app.mount(
+  "/uploads",
+  StaticFiles(directory="uploads"),
+  name="uploads"
+)

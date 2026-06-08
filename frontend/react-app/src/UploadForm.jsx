@@ -1,6 +1,9 @@
 import { useState } from "react";
+import { FaCheckCircle, FaTimesCircle } from "react-icons/fa";
 
 function UploadForm() {
+  const [result, setResult] = useState(null);
+  
   const [formData, setFormData] = useState({
     fullName: "",
     age: "",
@@ -43,7 +46,7 @@ function UploadForm() {
       const result = await response.json() 
 
       console.log("Success: ", result)
-      alert("Uploaded successfully")
+      setResult(result);
 
     } catch (error) {
       console.error("Error: ", error)
@@ -57,6 +60,35 @@ return (
   <div className="container mt-5">
     <div className="card shadow p-4">
       <h2 className="mb-4 text-center">Prisoner Search Upload</h2>
+
+      {/* If match is found */}
+      {result && result.match_found && (
+        <div className="alert alert-success mt-4">
+          <FaCheckCircle
+            size={30}
+            className="me-2"
+          />
+            <strong>Match Found!</strong>
+            <br />
+          Similarity:
+          {" "}
+          {(result.similarity * 100).toFixed(1)}%
+          <br />
+          <a href={`/prisoner/${result.matched_id}`}
+          className="btn btn-success mt-4">
+            See More Info
+          </a>
+        </div>
+      )}
+      {/* If no match is found */}
+      {result && !result.match_found && (
+        <div className="alert alert-danger mt-4">
+          <FaTimesCircle 
+            size={30}
+            className="me-2"/>
+            <strong>No Match Found</strong>
+        </div>
+      )}
 
       <form onSubmit={handleSubmit}>
 
