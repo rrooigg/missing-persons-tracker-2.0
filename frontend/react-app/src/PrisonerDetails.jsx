@@ -17,8 +17,8 @@ export default function PrisonerDetails() {
 
   return (
     <div className="container mt-5">
-      <div className="card p-4">
-        <img src={`http://127.0.0.1:8000/${prisoner.image_path}`} alt="" className="img-fluid mb-3"/>
+      <div className="card p-4 w-50 mx-auto">
+        <img src={`http://127.0.0.1:8000/${prisoner.image_path}`} alt="" className="img-fluid mb-3 mx-auto rounded" style={{width:"300px"}}/>
         <h3>{prisoner.full_name}</h3>
         <p>Age: {prisoner.age}</p>
         <p>Gender: {prisoner.gender}</p>

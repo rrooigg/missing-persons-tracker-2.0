@@ -61,8 +61,8 @@ function UploadForm() {
 
 return (
   <div className="container mt-5">
-    <div className="card shadow p-4">
-      <h2 className="mb-4 text-center">Prisoner Search Upload</h2>
+    <div className="card shadow p-4 w-50 mx-auto">
+      <h2 className="mb-4 text-center">Missing Persons Form</h2>
 
       {/* If match is found */}
       {result && result.match_found && (
