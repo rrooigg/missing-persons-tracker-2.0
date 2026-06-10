@@ -1,5 +1,6 @@
 import { use, useState } from "react";
 import { FaCheckCircle, FaTimesCircle } from "react-icons/fa";
+import { Link } from "react-router-dom";
 
 function UploadForm() {
   const [loading, setLoading] = useState(false);
@@ -61,6 +62,7 @@ function UploadForm() {
 
 return (
   <div className="container mt-5">
+    <Link to="/" className="btn btn-outline-danger mb-3">🔙Back</Link>
     <div className="card shadow p-4 w-50 mx-auto">
       <h2 className="mb-4 text-center">Missing Persons Form</h2>
 
@@ -103,7 +105,7 @@ return (
         <div className="mb-3">
           <label className="form-label">Age</label>
           <input type="number" className="form-control" name="age" onChange={handleChange}/>
-        </div>
+        </div> 
 
         <div className="mb-3">
           <label className="form-label">Gender</label>
@@ -129,7 +131,7 @@ return (
           <input type="file" className="form-control" accept="image/*" onChange={handPhotoChange}/>
         </div>
 
-        <button type="submit" className="btn btn-primary w-100" disabled={loading}>{loading ? "Searching...": "Submit"}</button>
+        <button type="submit" className="btn btn-danger w-100" disabled={loading}>{loading ? "Searching...": "Submit"}</button>
 
       </form>
     </div>
