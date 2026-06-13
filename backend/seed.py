@@ -6,12 +6,12 @@ db=SessionLocal()
 
 embedding=get_embedding("uploads/prisoner1.jpg")
 prisoner= Prisoner(
-  full_name="John Doe",
-  age=35,
+  full_name="Mike Le",
+  age=22,
   gender="Male",
-  description="Scar on left cheek",
+  description="thick eyebrows",
   last_seen_location="Mombasa",
-  image_path="uploads/prisoner1.jpg",
+  image_path="uploads/frowning.jpg",
   face_embedding=embedding
 )
 db.add(prisoner)

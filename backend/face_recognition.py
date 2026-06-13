@@ -6,7 +6,7 @@ def get_embedding(image_path):
   #Extract facial embedding from image.
   result = DeepFace.represent(
     img_path=image_path,
-    model_name="Facenet512",
+    model_name="ArcFace",
     enforce_detection=True
   )
 

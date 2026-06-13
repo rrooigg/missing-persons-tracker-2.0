@@ -66,18 +66,14 @@ async def upload_prisoner(
         "match_found":True,
         "matched_id":best_match.id,
         "matched_name":best_match.full_name,
-        "similarity":float(similarity)
+        "similarity":float(similarity),
+        
       }
-
     return {
       "match_found":False,
       "message":"No matching prisoner found"
 
     }
-    # return {
-    #   "message": "Uploaded successfully",
-    #   "id": new_prisoner.id
-    # }
   
   finally:
     db.close()
