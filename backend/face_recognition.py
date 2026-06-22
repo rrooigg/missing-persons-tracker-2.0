@@ -28,13 +28,15 @@ def find_best_match(uploaded_embedding, prisoners):
   best_score = 0
 
   for prisoner in prisoners:
-    if prisoner.face_embedding is None:
+    #debugging
+    print("Prisoner: ", prisoner.full_name)
+    if prisoner.face_embedding is None: 
       continue
     score = cosine_similarity(
       uploaded_embedding,
       prisoner.face_embedding
     )
-    if score > best_score:
+    if score > best_score: 
       best_score = score
       best_match = prisoner
 

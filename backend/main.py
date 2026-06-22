@@ -60,6 +60,10 @@ async def upload_prisoner(
       uploaded_embedding,
       prisoners
     )
+    #debugging
+    print("Best Match: ", best_match.full_name if best_match else None)
+    print("Similarity: ", similarity)
+    
     #Threshold
     if best_match and similarity > 0.80:
       return {
