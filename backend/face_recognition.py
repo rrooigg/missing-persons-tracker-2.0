@@ -34,8 +34,6 @@ def find_best_match(uploaded_embedding, prisoners):
       uploaded_embedding,
       prisoner.face_embedding
     )
-    print("Prisoner:", prisoner.full_name)
-    print("Score:", score) 
     if score > best_score: 
       best_score = score
       best_match = prisoner
