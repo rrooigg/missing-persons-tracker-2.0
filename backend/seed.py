@@ -6,8 +6,8 @@ db=SessionLocal()
 
 embedding=get_embedding("uploads/frowning.png")
 prisoner= Prisoner(
-  full_name="Mike Le",
-  age=22,
+  full_name="Mike Lee",
+  age=20,
   gender="Male",
   description="thick eyebrows",
   last_seen_location="Mombasa",
