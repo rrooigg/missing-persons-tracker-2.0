@@ -61,7 +61,7 @@ async def upload_prisoner(
       prisoners
     )
     #debugging
-    print("Best Match: ", best_match.full_name if best_match else None)
+    print("Best Match: ", best_match.full_name if best_match else None) 
     print("Similarity: ", similarity)
     
     #Threshold
