@@ -46,36 +46,19 @@ async def upload_prisoner(
   try:
     prisoners = db.query(Prisoner).all()
 
-    best_match = None
-    best_distance = float("inf")
-
     for prisoner in prisoners:
-      try:
-        verified, distance, threshold = verify_faces(
-          file_path,
-          prisoner.image_path
-        )
-        
-        print("--------------------------")
-        print("Prisoner:", prisoner.full_name)
-        print("Verified:", verified)
-        print("Distance:", distance)
-        print("Threshold:", threshold)
+      verified, distance, threshold = verify_faces(
+        file_path,
+        prisoner.image_path
+      )
 
-        if verified and distance < best_distance:
-          best_distance = distance
-          best_match = prisoner
-
-      except Exception as e:
-        print("Verification error:", e)
-
-    if best_match:
-      return {
-        "match_found": True,
-        "matched_id": best_match.id,
-        "matched_name": best_match.full_name,
-        "distance": float(best_distance)
-      }
+      if verified:
+        return {
+          "match_found": True,
+          "matched_id": prisoner.id,
+          "matched_name": prisoner.full_name,
+          "distance": float(distance)
+        }
 
     return {
       "match_found": False,
