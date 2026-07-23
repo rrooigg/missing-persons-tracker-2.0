@@ -45,6 +45,11 @@ async def upload_prisoner(
 
   try:
     prisoners = db.query(Prisoner).all()
+    # debugging
+    print("Number of prisoners:", len(prisoners))
+
+    for p in prisoners:
+      print(p.id, p.full_name)
 
     for prisoner in prisoners:
       verified, distance, threshold = verify_faces(
