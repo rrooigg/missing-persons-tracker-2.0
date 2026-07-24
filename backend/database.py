@@ -8,10 +8,7 @@ import os
 DATABASE_URL = os.getenv("DATABASE_URL")
 
 #create engine -> create 1 engine for whole application(manages connections, sends sql queries, talk to postresql)
-engine = create_engine(DATABASE_URL,
-                      pool_pre_ping=True,
-                      pool_recycle=300,
-                       )
+engine = create_engine(DATABASE_URL)
 
 #create sessions
 SessionLocal = sessionmaker(
