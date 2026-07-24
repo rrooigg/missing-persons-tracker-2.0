@@ -9,6 +9,7 @@ from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
+from sqlalchemy import text
 
 from database import engine, SessionLocal
 from models import Base, Prisoner
@@ -16,7 +17,7 @@ from face_recognition import get_face_embedding
 
 # Enable pgvector on Neon DB
 with engine.connect() as conn:
-    conn.execute("CREATE EXTENSION IF NOT EXISTS vector;")
+    conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector;"))
     conn.commit()
 
 Base.metadata.create_all(bind=engine)
