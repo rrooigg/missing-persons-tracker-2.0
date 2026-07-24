@@ -2,8 +2,6 @@ import os
 import gc
 import shutil
 
-# --- CRITICAL MEMORY OPTIMIZATIONS FOR RENDER FREE TIER ---
-# Set these BEFORE importing tensorflow/deepface via face_recognition
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
 os.environ['MALLOC_TRIM_THRESHOLD_'] = '65536'
 
@@ -14,9 +12,13 @@ from sqlalchemy.orm import Session
 
 from database import engine, SessionLocal
 from models import Base, Prisoner
-from face_recognition import verify_faces
+from face_recognition import get_face_embedding
 
-# Create database tables
+# Enable pgvector on Neon DB
+with engine.connect() as conn:
+    conn.execute("CREATE EXTENSION IF NOT EXISTS vector;")
+    conn.commit()
+
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
@@ -32,7 +34,9 @@ app.add_middleware(
 UPLOAD_DIR = "uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
-# Add a Root Route so Render pings stop throwing 404 errors
+# Facenet distance threshold for verification (~0.40 to 0.55 depending on distance metric)
+FACENET_THRESHOLD = 0.40 
+
 @app.get("/")
 def root():
     return {"status": "healthy", "service": "Missing Persons Tracker API"}
@@ -54,45 +58,54 @@ async def upload_prisoner(
     db: Session = SessionLocal()
 
     try:
-        prisoners = db.query(Prisoner).all()
-        
-        match_found = False
-        matched_prisoner = None
-        final_distance = None
+        # Step 1: Extract embedding ONCE for the uploaded image
+        query_vector = get_face_embedding(file_path)
 
-        for prisoner in prisoners:
-            # Skip if the record doesn't have a valid image path to avoid system crashes
-            if not prisoner.image_path or not os.path.exists(prisoner.image_path):
-                continue
-                
-            try:
-                verified, distance, threshold = verify_faces(file_path, prisoner.image_path)
-                
-                if verified:
-                    match_found = True
-                    matched_prisoner = prisoner
-                    final_distance = float(distance)
-                    break # Stop looping immediately once a match is found to conserve RAM!
-            except Exception as face_err:
-                print(f"Error checking face against prisoner ID {prisoner.id}: {face_err}")
-                continue # Skip corrupt files gracefully without killing the server
+        if query_vector is None:
+            raise HTTPException(status_code=400, detail="Could not process face from image.")
 
-        # Explicitly invoke the Python garbage collector right after the heavy loop blocks run
-        gc.collect()
+        # Step 2: Let Neon Postgres/pgvector do the search instantly in SQL
+        # Using L2 distance (<->)
+        nearest = (
+            db.query(
+                Prisoner,
+                Prisoner.embedding.l2_distance(query_vector).label("distance")
+            )
+            .order_by("distance")
+            .first()
+        )
 
-        if match_found:
-            return {
-                "match_found": True,
-                "matched_id": matched_prisoner.id,
-                "matched_name": matched_prisoner.full_name,
-                "distance": final_distance
-            }
+        # Step 3: Check distance against threshold
+        if nearest:
+            matched_prisoner, distance = nearest
+            if distance is not None and distance <= FACENET_THRESHOLD:
+                return {
+                    "match_found": True,
+                    "matched_id": matched_prisoner.id,
+                    "matched_name": matched_prisoner.full_name,
+                    "distance": float(distance)
+                }
+
+        # If no match found, save new record with its embedding
+        new_prisoner = Prisoner(
+            full_name=fullName,
+            age=age,
+            gender=gender,
+            description=description,
+            last_seen_location=lastSeenLocation,
+            image_path=file_path,
+            embedding=query_vector
+        )
+        db.add(new_prisoner)
+        db.commit()
 
         return {
             "match_found": False,
-            "message": "No matching prisoner found"
+            "message": "No matching prisoner found. Created new entry."
         }
 
+    except HTTPException:
+        raise
     except Exception as e:
         print(f"System processing error: {e}")
         raise HTTPException(status_code=500, detail="Internal facial recognition server error")
@@ -120,8 +133,4 @@ def get_prisoner(prisoner_id: int):
     finally:
         db.close()
 
-app.mount(
-    "/uploads",
-    StaticFiles(directory="uploads"),
-    name="uploads"
-)
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")

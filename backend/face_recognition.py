@@ -2,20 +2,20 @@ from deepface import DeepFace
 import tensorflow as tf
 import gc
 
-def verify_faces(uploaded_image_path, stored_image_path):
+def get_face_embedding(image_path: str):
   try:
-    result = DeepFace.verify(
-      img1_path=uploaded_image_path,
-      img2_path=stored_image_path,
-      model_name="Facenet",
+    results = DeepFace.represent(
+      img_path=image_path,
+      model_name="Facenet",  # Generates 128 floats
       detector_backend="opencv",
       enforce_detection=False
     )
-    return (
-      result["verified"],
-      result["distance"],
-      result["threshold"]
-    )
+    if results and len(results) > 0:
+      return results[0]["embedding"]
+    return None
+  except Exception as e:
+    print(f"Error extracting embedding: {e}")
+    return None
   finally:
     tf.keras.backend.clear_session()
     gc.collect()
