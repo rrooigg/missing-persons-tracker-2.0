@@ -4,6 +4,8 @@ from sqlalchemy.ext.declarative import declarative_base  #creates a base class w
 from sqlalchemy.orm import sessionmaker   #session like a 'conversation' with the db i.e crud operations with db
 #database url
 import os
+from dotenv import load_dotenv
+load_dotenv() 
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 
