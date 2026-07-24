@@ -1,23 +1,26 @@
-#setup a connection between python & postgresql
-from sqlalchemy import create_engine   #core object to communicate with database
-from sqlalchemy.ext.declarative import declarative_base  #creates a base class which db models will inherit from
-from sqlalchemy.orm import sessionmaker   #session like a 'conversation' with the db i.e crud operations with db
-#database url
 import os
 from dotenv import load_dotenv
-load_dotenv() 
+from sqlalchemy import create_engine
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
+
+# Load environment variables from .env file
+load_dotenv()
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 
-#create engine -> create 1 engine for whole application(manages connections, sends sql queries, talk to postresql)
+if not DATABASE_URL:
+    raise ValueError("DATABASE_URL is not set! Please check your .env file in the backend folder.")
+
+# Create SQLAlchemy engine
 engine = create_engine(DATABASE_URL)
 
-#create sessions
+# Create SessionLocal class for DB interactions
 SessionLocal = sessionmaker(
-  autocommit=False, #changes aren't automatically saved
-  autoflush=False, #will not push pending changes before queries
-  bind=engine #connects session to engine created
+    autocommit=False,
+    autoflush=False,
+    bind=engine
 )
 
-#Base class for models
+# Base class for database models
 Base = declarative_base()

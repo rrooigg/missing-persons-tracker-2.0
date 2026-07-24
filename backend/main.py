@@ -1,137 +1,104 @@
 import os
-import gc
 import shutil
-
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
-os.environ['MALLOC_TRIM_THRESHOLD_'] = '65536'
-
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException
+from fastapi import FastAPI, UploadFile, File, Form, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
-from sqlalchemy import text
 
 from database import engine, SessionLocal
 from models import Base, Prisoner
-from face_recognition import get_face_embedding
+from face_recognition import verify_faces
 
-# Enable pgvector on Neon DB
-with engine.connect() as conn:
-    conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector;"))
-    conn.commit()
-
+# Create tables if they do not exist
 Base.metadata.create_all(bind=engine)
 
-app = FastAPI()
+app = FastAPI(title="Missing Persons Tracker API")
 
+# Enable CORS for local frontend development (e.g., React on localhost:3000 or 5173)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "https://missing-persons-tracker.vercel.app"],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+# Serve uploaded images statically
 UPLOAD_DIR = "uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
+app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 
-# Facenet distance threshold for verification (~0.40 to 0.55 depending on distance metric)
-FACENET_THRESHOLD = 0.40 
+# Dependency to get DB session per request
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
 @app.get("/")
-def root():
-    return {"status": "healthy", "service": "Missing Persons Tracker API"}
+def read_root():
+    return {"message": "Missing Persons Tracker API is running locally."}
 
-@app.post("/upload")
-async def upload_prisoner(
-    fullName: str = Form(...),
-    age: int = Form(...),
-    gender: str = Form(...),
-    description: str = Form(...),
-    lastSeenLocation: str = Form(...),
-    file: UploadFile = File(...)
+@app.post("/add-prisoner/")
+async def add_prisoner(
+    name: str = Form(...),
+    age: int = Form(None),
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db)
 ):
+    # Save the uploaded target image to local storage
     file_path = os.path.join(UPLOAD_DIR, file.filename)
-
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
 
-    db: Session = SessionLocal()
+    # Save metadata to database
+    new_prisoner = Prisoner(
+        name=name,
+        age=age,
+        image_path=file_path
+    )
+    db.add(new_prisoner)
+    db.commit()
+    db.refresh(new_prisoner)
+
+    return {"message": "Prisoner added successfully", "prisoner": new_prisoner}
+
+@app.post("/search-prisoner/")
+async def search_prisoner(
+    file: UploadFile = File(...), 
+    db: Session = Depends(get_db)
+):
+    # 1. Save uploaded query image temporarily
+    temp_dir = "temp_uploads"
+    os.makedirs(temp_dir, exist_ok=True)
+    query_img_path = os.path.join(temp_dir, file.filename)
+
+    with open(query_img_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
 
     try:
-        # Step 1: Extract embedding ONCE for the uploaded image
-        query_vector = get_face_embedding(file_path)
+        # 2. Fetch all registered records
+        prisoners = db.query(Prisoner).all()
+        matched_prisoners = []
 
-        if query_vector is None:
-            raise HTTPException(status_code=400, detail="Could not process face from image.")
+        # 3. Compare uploaded image against each stored record using verify()
+        for prisoner in prisoners:
+            if prisoner.image_path and os.path.exists(prisoner.image_path):
+                is_match = verify_faces(query_img_path, prisoner.image_path)
+                if is_match:
+                    matched_prisoners.append(prisoner)
 
-        # Step 2: Let Neon Postgres/pgvector do the search instantly in SQL
-        # Using L2 distance (<->)
-        nearest = (
-            db.query(
-                Prisoner,
-                Prisoner.embedding.l2_distance(query_vector).label("distance")
-            )
-            .order_by("distance")
-            .first()
-        )
+        return {"matches": matched_prisoners}
 
-        # Step 3: Check distance against threshold
-        if nearest:
-            matched_prisoner, distance = nearest
-            if distance is not None and distance <= FACENET_THRESHOLD:
-                return {
-                    "match_found": True,
-                    "matched_id": matched_prisoner.id,
-                    "matched_name": matched_prisoner.full_name,
-                    "distance": float(distance)
-                }
-
-        # If no match found, save new record with its embedding
-        new_prisoner = Prisoner(
-            full_name=fullName,
-            age=age,
-            gender=gender,
-            description=description,
-            last_seen_location=lastSeenLocation,
-            image_path=file_path,
-            embedding=query_vector
-        )
-        db.add(new_prisoner)
-        db.commit()
-
-        return {
-            "match_found": False,
-            "message": "No matching prisoner found. Created new entry."
-        }
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        print(f"System processing error: {e}")
-        raise HTTPException(status_code=500, detail="Internal facial recognition server error")
-        
     finally:
-        db.close()
+        # Clean up temporary query image
+        if os.path.exists(query_img_path):
+            os.remove(query_img_path)
 
-@app.get("/prisoner/{prisoner_id}")
-def get_prisoner(prisoner_id: int):
-    db = SessionLocal()
-    try:
-        prisoner = db.query(Prisoner).filter(Prisoner.id == prisoner_id).first()
-        if not prisoner:
-            return {"message": "Not found"}
-
-        return {
-            "id": prisoner.id,
-            "full_name": prisoner.full_name,
-            "age": prisoner.age,
-            "gender": prisoner.gender,
-            "description": prisoner.description,
-            "last_seen_location": prisoner.last_seen_location,
-            "image_path": prisoner.image_path
-        }
-    finally:
-        db.close()
-
-app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
+@app.get("/prisoner/{id}")
+def get_prisoner(id: int, db: Session = Depends(get_db)):
+    prisoner = db.query(Prisoner).filter(Prisoner.id == id).first()
+    if not prisoner:
+        raise HTTPException(status_code=404, detail="Prisoner not found")
+    return prisoner
