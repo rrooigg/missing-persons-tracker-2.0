@@ -7,7 +7,7 @@ export default function PrisonerDetails() {
   const [ prisoner, setPrisoner ] = useState(null);
 
   useEffect(() => {
-    fetch(`https://missing-persons-tracker.onrender.com/prisoner/${id}`)
+    fetch(`http://127.0.0.1:8000/prisoner/${id}`)
     .then(res => res.json())
     .then(data => setPrisoner(data));
   }, [id]);
