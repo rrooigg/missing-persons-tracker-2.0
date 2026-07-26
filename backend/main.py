@@ -109,3 +109,10 @@ def get_prisoner(prisoner_id: int):
 
   finally:
     db.close()
+
+app.mount(
+  '/uploads',
+  StaticFiles(directory='uploads'),
+  name='uploads'
+
+)

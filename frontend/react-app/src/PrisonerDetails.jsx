@@ -9,7 +9,9 @@ export default function PrisonerDetails() {
   useEffect(() => {
     fetch(`http://127.0.0.1:8000/prisoner/${id}`)
     .then(res => res.json())
-    .then(data => setPrisoner(data));
+    .then(data => {
+      console.log(data.image_path), 
+      setPrisoner(data)});
   }, [id]);
 
   if (!prisoner) {
@@ -20,7 +22,7 @@ export default function PrisonerDetails() {
     <div className="container mt-5">
       <Link to="/search" className="btn btn-outline-danger mb-3">🔙Back</Link>
       <div className="card p-4 w-50 mx-auto">
-        <img src={`https://missing-persons-tracker.onrender.com/${prisoner.image_path}`} alt="" className="img-fluid mb-3 mx-auto rounded" style={{width:"300px"}}/>
+        <img src={`http://127.0.0.1:8000/${prisoner.image_path}`} alt="" className="img-fluid mb-3 mx-auto rounded" style={{width:"300px"}}/>
         <h3>{prisoner.full_name}</h3>
         <p>Age: {prisoner.age}</p>
         <p>Gender: {prisoner.gender}</p>

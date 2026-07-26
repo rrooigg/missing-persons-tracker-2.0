@@ -77,7 +77,7 @@ return (
             <br />
           Similarity:
           {" "}
-          {(result.distance * 100).toFixed(1)}%
+          {(100-result.distance * 100).toFixed(1)}%
           <br />
           <a href={`/prisoner/${result.matched_id}`}
           className="btn btn-success mt-4">
