@@ -61,13 +61,19 @@ export default function LandingPage() {
             identify missing persons by comparing uploaded photos
             against registered records.
           </p>
-
           <Link
             to="/search"
             className="btn btn-lg px-5 py-3 fw-bold text-white"
-          style={{backgroundColor: "#8B0000"}}>
+            style={{backgroundColor: "#8B0000"}}>
             Start Search
           </Link>
+          <Link
+          to="/dashboard"
+          className="btn btn-lg px-5 py-3 fw-bold text-white ms-4"
+          style={{backgroundColor: "#8B0000"}}
+        >
+          Dashboard
+        </Link>
         </div>
       </section>
 
