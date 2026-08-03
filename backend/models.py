@@ -28,7 +28,7 @@ class Person(Base):
   image_path=Column(String, nullable=False)
   institution_id=Column(
     Integer,
-    ForeignKey("institution.id"),
+    ForeignKey("institutions.id"),
     nullable=False
   )
   institution=relationship(
