@@ -186,50 +186,31 @@ async def upload_person(
       stored_path=person.image_path
 
       if not os.path.exists(stored_path):
-        print(
-          f"Image missing for {person.full_name}:"
-          f"{stored_path}"
-        )
+        print(f"Image missing for {person.full_name}:"
+          f"{stored_path}")
         continue
 
       try:
-        verified, distance, threshold=verify_faces(
-          file_path,
-          stored_path
-        )
+        verified, distance, threshold=verify_faces(   file_path, stored_path)
+
         print("----------------")
-        print(
-          "Person:",
-          person.full_name
+        print("Person:",person.full_name
         )
-        print(
-          "Institution:",
-          person.institution.name
+        print("Institution:",person.institution.name
         )
-        print(
-          "Verified:",
-          verified
+        print("Verified:",verified
         )
-        print(
-          "Distance:",
-          distance
+        print("Distance:",distance
         )
-        print(
-          "Threshold:",
-          threshold
+        print("Threshold:",threshold
         )
 
-        if(
-          verified
-          and distance<best_distance
-        ):
+        if(verified and distance<best_distance):
           best_distance=distance
           best_match=person
           best_threshold=threshold
       except Exception as e:
-        print(
-          f"Verification error for"
-          f"{person.full_name}:{e}"
+        print(f"Verification error for" f"{person.full_name}:{e}"
         )
     #match found
     if best_match:
@@ -266,6 +247,9 @@ async def upload_person(
     }
   finally:
     db.close()
+    #delete the uploaded search image
+    if os.path.exists(file_path):
+      os.remove(file_path)
 
 #person details
 @app.get("/person/{person_id}")
