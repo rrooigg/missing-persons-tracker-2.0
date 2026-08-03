@@ -72,7 +72,7 @@ def get_institutions():
         .filter(
           Person.institution_id == institution.id
         )
-        .count
+        .count()
       )
       result.append({
         "id":institution.id,
@@ -245,7 +245,7 @@ async def upload_person(
         "match_found":True,
         "matched_id":best_match.id,
         "matched_name":best_match.full_name,
-        "distance": floar(
+        "distance": float(
           best_distance
         ),
         "threshold": float(

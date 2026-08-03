@@ -189,7 +189,7 @@ export default function Dashboard() {
         <div>
 
           <h1>
-            Admin Dashboard
+            Dashboard
           </h1>
 
           <p className="text-muted">
