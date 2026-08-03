@@ -1,6 +1,6 @@
 import UploadForm from "./UploadForm";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import PrisonerDetails from "./PrisonerDetails";
+import PersonDetails from "./PersonDetails";
 import LandingPage from "./LandingPage";
 import Dashboard from "./Dashboard";
 import RegisterInstitution from "./RegisterInstitution";
@@ -11,7 +11,7 @@ function App() {
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/search" element={<UploadForm />} />
-        <Route path="/prisoner/:id" element={<PrisonerDetails />} />
+        <Route path="/person/:id" element={<PersonDetails />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/register-institution" element={<RegisterInstitution />} />
       </Routes>
